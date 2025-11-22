@@ -45,8 +45,7 @@ def parse_args():
     parser.add_argument('--dropout', type=float, default=config.dropout, help='Dropout比例')
     # 添加参数解析中的数据集参数
     parser.add_argument("--dataset", type=str, default=config.dataset_name,
-                        choices=["MultiOFF", "HatefulMemes"],
-                        help="要使用的数据集名称")
+                        choices=["MultiOFF", "HatefulMemes"])
 
     return parser.parse_args()
 
@@ -101,7 +100,6 @@ def train_epoch(model, dataloader, optimizer, device, max_grad_norm):
     return total_loss / len(dataloader), accuracy, f1, precision, loss_dict
 
 
-# 修改评估函数以返回AUCROC
 def evaluate(model, dataloader, device, desc="Evaluating"):
     model.eval()
     all_preds = []
@@ -144,13 +142,6 @@ def evaluate(model, dataloader, device, desc="Evaluating"):
     recall = recall_score(all_labels, all_preds, average='macro')
     cm = confusion_matrix(all_labels, all_preds)
 
-    # # 计算AUCROC
-    # try:
-    #     auc_roc = roc_auc_score(all_labels, all_probs)
-    # except Exception as e:
-    #     print(f"计算AUC-ROC时出错: {e}")
-    #     auc_roc = 0.0
-    # 安全计算AUC-ROC
     try:
         # 检查标签是否只有一个类别
         unique_labels = np.unique(all_labels)
@@ -182,7 +173,7 @@ def test_model(model, dataloader, device, output_dir=None):
         output_dir: 输出目录，如果提供则保存结果
     """
     print("\n开始在测试集上进行评估...")
-    # 捕获evaluate返回的所有数据
+
     accuracy, f1, precision, recall, auc_roc, cm, _, all_labels, all_probs = evaluate(model, dataloader, device, desc="Testing")
 
     # 打印结果
@@ -298,10 +289,6 @@ def plot_roc_curve(fpr, tpr, auc_roc, save_path, title="Receiver Operating Chara
     plt.legend(loc="lower right")
     plt.grid(True, alpha=0.3)
 
-    # 添加解释性文本
-    # plt.text(0.5, 0.3, 'Better performance →',
-    #          fontsize=12, rotation=45, ha='center', va='center',
-    #          bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="grey", alpha=0.7))
 
     plt.savefig(save_path, dpi=300, bbox_inches='tight')
     plt.close()
@@ -346,7 +333,7 @@ def save_experiment_info(output_dir, metrics):
     
     print(f"实验信息已保存至 {output_dir}/experiment_info.json")
 
-# ——————————主函数————————————
+
 def main():
     args = parse_args()
 
@@ -454,7 +441,6 @@ def main():
         for key, value in loss_dict.items():
             print(f"  {key}: {value:.4f}")
 
-        # 保存验证集上表现最佳的模型
         if val_f1 > best_val_f1:
             best_val_f1 = val_f1
             torch.save(model.state_dict(), f"{args.output_dir}/best_val_model.pth")
